@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block title %}Friends - Library System{% endblock %}
+
+{% block extra_css %}
+<style>
+.friend-card {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: transform 0.2s;
+}
+
+.friend-card:hover {
+    transform: translateY(-5px);
+}
+
+.friend-card .profile-picture {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.friend-card .profile-picture-placeholder {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background-color: var(--bs-secondary-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">Friends</h1>
+
+    {% if pending_requests %}
+    <div class="mb-5">
+        <h2 class="h4 mb-4">Friend Requests</h2>
+        <div class="row">
+            {% for request in pending_requests %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card friend-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="me-3">
+                                {% if request.from_user.profile_picture %}
+                                    <img src="{{ request.from_user.profile_picture.url }}" 
+                                         alt="{{ request.from_user.user.username }}" class="profile-picture">
+                                {% else %}
+                                    <div class="profile-picture-placeholder">
+                                        <i class="bi bi-person text-muted" style="font-size: 1.5rem;"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <h5 class="card-title mb-1">
+                                    <a href="{% url 'users:user_profile' username=request.from_user.user.username %}" 
+                                       class="text-decoration-none">
+                                        {{ request.from_user.user.get_full_name|default:request.from_user.user.username }}
+                                    </a>
+                                </h5>
+                                <p class="card-text text-muted mb-0">@{{ request.from_user.user.username }}</p>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <form action="{% url 'users:accept_friend_request' request_id=request.id %}" method="POST" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    <i class="bi bi-check-lg"></i> Accept
+                                </button>
+                            </form>
+                            <form action="{% url 'users:reject_friend_request' request_id=request.id %}" method="POST" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm">
+                                    <i class="bi bi-x-lg"></i> Reject
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <h2 class="h4 mb-4">My Friends ({{ friends.count }})</h2>
+    {% if friends %}
+    <div class="row">
+        {% for friend in friends %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card friend-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            {% if friend.profile_picture %}
+                                <img src="{{ friend.profile_picture.url }}" 
+                                     alt="{{ friend.user.username }}" class="profile-picture">
+                            {% else %}
+                                <div class="profile-picture-placeholder">
+                                    <i class="bi bi-person text-muted" style="font-size: 1.5rem;"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-1">
+                                <a href="{% url 'users:user_profile' username=friend.user.username %}" 
+                                   class="text-decoration-none">
+                                    {{ friend.user.get_full_name|default:friend.user.username }}
+                                </a>
+                            </h5>
+                            <p class="card-text text-muted mb-0">@{{ friend.user.username }}</p>
+                        </div>
+                    </div>
+                    <form action="{% url 'users:remove_friend' username=friend.user.username %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-person-x"></i> Remove Friend
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-muted">You haven't added any friends yet.</p>
+    {% endif %}
+</div>
+{% endblock %} 

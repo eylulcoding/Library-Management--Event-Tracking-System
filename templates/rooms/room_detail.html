@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ room.name }} - Library System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-6">
+            {% if room.image %}
+                <img src="{{ room.image.url }}" class="img-fluid rounded shadow" alt="{{ room.name }}">
+            {% else %}
+                <div class="bg-secondary rounded shadow d-flex align-items-center justify-content-center" style="height: 300px;">
+                    <i class="bi bi-door-open text-white" style="font-size: 5rem;"></i>
+                </div>
+            {% endif %}
+            
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h5 class="card-title">Room Details</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="bi bi-building text-primary"></i>
+                            <strong>Floor:</strong> {{ room.floor }}
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-people text-primary"></i>
+                            <strong>Capacity:</strong> {{ room.capacity }} people
+                        </li>
+                    </ul>
+                    <p class="card-text">{{ room.description }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            {% if user.is_authenticated %}
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Reserve Room</h5>
+                        <form action="{% url 'rooms:reserve_room' room.pk %}" method="POST">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="date" class="form-label">Date</label>
+                                <input type="date" class="form-control" id="date" name="date" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="time_slot" class="form-label">Time Slot</label>
+                                <select class="form-select" id="time_slot" name="time_slot" required>
+                                    <option value="">Select a time slot</option>
+                                    {% for slot in time_slots %}
+                                        <option value="{{ slot.id }}">{{ slot.get_slot_display }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="number_of_people" class="form-label">Number of People</label>
+                                <input type="number" class="form-control" id="number_of_people" name="number_of_people"
+                                       min="1" max="{{ room.capacity }}" required>
+                                <div class="form-text">Maximum capacity: {{ room.capacity }} people</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Reserve Room</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Rate this Room</h5>
+                        <form action="{% url 'rooms:rate_room' room.pk %}" method="POST">
+                            {% csrf_token %}
+                            <div class="rating mb-3">
+                                {% for i in "54321"|make_list %}
+                                    <input type="radio" name="rating" value="{{ i }}" id="star{{ i }}"
+                                           {% if user_rating.rating == i|add:"0" %}checked{% endif %}>
+                                    <label for="star{{ i }}">★</label>
+                                {% endfor %}
+                            </div>
+                            <div class="mb-3">
+                                <textarea name="comment" class="form-control" rows="3" 
+                                          placeholder="Share your experience with this room...">{{ user_rating.comment }}</textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Submit Rating</button>
+                        </form>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    Please <a href="{% url 'account_login' %}">login</a> to reserve or rate this room.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3 class="mb-4">Recent Reviews</h3>
+            {% for rating in room.roomrating_set.all|slice:":5" %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <h6 class="card-subtitle mb-2 text-muted">{{ rating.user.username }}</h6>
+                            <div class="text-warning">
+                                {% for i in "12345"|make_list %}
+                                    {% if forloop.counter <= rating.rating %}
+                                        ★
+                                    {% else %}
+                                        ☆
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <p class="card-text">{{ rating.comment }}</p>
+                        <small class="text-muted">{{ rating.created_at|date:"F j, Y" }}</small>
+                    </div>
+                </div>
+            {% empty %}
+                <p class="text-muted">No reviews yet. Be the first to rate this room!</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.getElementById('date');
+    const timeSlotSelect = document.getElementById('time_slot');
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Set minimum date as today
+    dateInput.min = today;
+    
+    // Set default value to today only if no date is selected
+    if (!dateInput.value) {
+        dateInput.value = today;
+    }
+    
+    function getTimeFromSlot(slot) {
+        if (slot.includes('9:00') || slot.includes('09:00')) return 9;
+        if (slot.includes('13:00')) return 13;
+        if (slot.includes('17:00')) return 17;
+        return 0;
+    }
+    
+    function updateAvailableTimeSlots() {
+        const selectedDate = new Date(dateInput.value);
+        const now = new Date();
+        const currentHour = now.getHours();
+        const currentMinutes = now.getMinutes();
+        
+        // Reset all options
+        Array.from(timeSlotSelect.options).forEach(option => {
+            option.disabled = false;
+        });
+        
+        // Check if selected date is today
+        if (selectedDate.toDateString() === now.toDateString()) {
+            Array.from(timeSlotSelect.options).forEach(option => {
+                if (option.value) { // Skip the placeholder option
+                    const slotTime = getTimeFromSlot(option.text);
+                    
+                    // Disable if:
+                    // 1. Hour has passed
+                    // 2. Current hour and more than 30 minutes have passed
+                    if (currentHour > slotTime || (currentHour === slotTime && currentMinutes > 30)) {
+                        option.disabled = true;
+                    }
+                }
+            });
+            
+            // If currently selected option is now disabled, clear the selection
+            if (timeSlotSelect.selectedOptions[0]?.disabled) {
+                timeSlotSelect.value = '';
+            }
+        }
+        
+        // If no valid options are available, show a message
+        const hasValidOption = Array.from(timeSlotSelect.options).some(option => 
+            option.value && !option.disabled
+        );
+        
+        const messageDiv = document.getElementById('time-slot-message');
+        if (!hasValidOption) {
+            if (!messageDiv) {
+                const div = document.createElement('div');
+                div.id = 'time-slot-message';
+                div.className = 'alert alert-warning mt-2';
+                div.textContent = 'No available time slots for the selected date. Please choose another date.';
+                timeSlotSelect.parentNode.appendChild(div);
+            }
+        } else if (messageDiv) {
+            messageDiv.remove();
+        }
+    }
+    
+    // Update time slots when date changes
+    dateInput.addEventListener('change', updateAvailableTimeSlots);
+    
+    // Initial update
+    updateAvailableTimeSlots();
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile - Library System{% endblock %}
+
+{% block extra_css %}
+<style>
+.profile-picture {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.profile-picture.placeholder {
+    background-color: #e9ecef;
+}
+
+.stats-card {
+    border-left: 4px solid;
+    transition: transform 0.2s;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+}
+
+.stats-card.books {
+    border-left-color: var(--bs-primary);
+}
+
+.stats-card.rooms {
+    border-left-color: var(--bs-success);
+}
+
+.stats-card.ratings {
+    border-left-color: var(--bs-warning);
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.activity-icon.borrow {
+    background-color: rgba(var(--bs-primary-rgb), 0.1);
+    color: var(--bs-primary);
+}
+
+.activity-icon.return {
+    background-color: rgba(var(--bs-success-rgb), 0.1);
+    color: var(--bs-success);
+}
+
+.activity-icon.reserve {
+    background-color: rgba(var(--bs-info-rgb), 0.1);
+    color: var(--bs-info);
+}
+
+.activity-icon.rate {
+    background-color: rgba(var(--bs-warning-rgb), 0.1);
+    color: var(--bs-warning);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Profile Header -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    {% if profile.profile_picture %}
+                        <img src="{{ profile.profile_picture.url }}" alt="Profile Picture" class="profile-picture mb-3">
+                    {% else %}
+                        <div class="profile-picture placeholder d-flex align-items-center justify-content-center mb-3 mx-auto">
+                            <i class="bi bi-person text-muted" style="font-size: 4rem;"></i>
+                        </div>
+                    {% endif %}
+                    <h3>{{ user.get_full_name|default:user.username }}</h3>
+                    <p class="text-muted mb-2">
+                        <i class="bi bi-envelope"></i> {{ user.email }}
+                    </p>
+                    <p class="text-muted mb-3">
+                        <i class="bi bi-calendar3"></i> Member since {{ user.date_joined|date:"F Y" }}
+                    </p>
+                    <a href="{% url 'users:edit_profile' %}" class="btn btn-primary">
+                        <i class="bi bi-pencil"></i> Edit Profile
+                    </a>
+                </div>
+            </div>
+
+            <!-- About Me -->
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-person-lines-fill"></i> About Me
+                    </h5>
+                    <p class="card-text">{{ profile.bio|default:"No bio added yet." }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <!-- Statistics -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card stats-card books">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-book text-primary" style="font-size: 2rem;"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-0">Books Borrowed</h6>
+                                    <h3 class="mb-0">{{ total_borrows }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card stats-card rooms">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-door-open text-success" style="font-size: 2rem;"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-0">Room Bookings</h6>
+                                    <h3 class="mb-0">{{ total_reservations }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card stats-card ratings">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-star text-warning" style="font-size: 2rem;"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-0">Reviews Given</h6>
+                                    <h3 class="mb-0">{{ total_ratings }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity Timeline -->
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">
+                        <i class="bi bi-activity"></i> Recent Activity
+                    </h5>
+                    {% if activities %}
+                        <div class="timeline">
+                            {% for activity in activities %}
+                                <div class="d-flex mb-4">
+                                    {% if activity.type == 'borrow' %}
+                                        <div class="activity-icon borrow">
+                                            <i class="bi bi-book"></i>
+                                        </div>
+                                        <div class="ms-3">
+                                            <h6 class="mb-1">Borrowed "{{ activity.book.title }}"</h6>
+                                            <small class="text-muted">{{ activity.created_at|date:"F j, Y" }}</small>
+                                        </div>
+                                    {% elif activity.type == 'return' %}
+                                        <div class="activity-icon return">
+                                            <i class="bi bi-arrow-return-left"></i>
+                                        </div>
+                                        <div class="ms-3">
+                                            <h6 class="mb-1">Returned "{{ activity.book.title }}"</h6>
+                                            <small class="text-muted">{{ activity.return_date|date:"F j, Y" }}</small>
+                                        </div>
+                                    {% elif activity.type == 'reserve' %}
+                                        <div class="activity-icon reserve">
+                                            <i class="bi bi-calendar-check"></i>
+                                        </div>
+                                        <div class="ms-3">
+                                            <h6 class="mb-1">Reserved {{ activity.room.name }}</h6>
+                                            <small class="text-muted">
+                                                For {{ activity.date|date:"F j, Y" }} at {{ activity.time_slot }}
+                                            </small>
+                                        </div>
+                                    {% elif activity.type == 'rate' %}
+                                        <div class="activity-icon rate">
+                                            <i class="bi bi-star"></i>
+                                        </div>
+                                        <div class="ms-3">
+                                            <h6 class="mb-1">Rated "{{ activity.book.title }}"</h6>
+                                            <div class="text-warning">
+                                                {% for i in "12345"|make_list %}
+                                                    {% if forloop.counter <= activity.rating %}★{% else %}☆{% endif %}
+                                                {% endfor %}
+                                            </div>
+                                            {% if activity.comment %}
+                                                <p class="mb-1 text-muted">{{ activity.comment }}</p>
+                                            {% endif %}
+                                            <small class="text-muted">{{ activity.created_at|date:"F j, Y" }}</small>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No recent activity.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

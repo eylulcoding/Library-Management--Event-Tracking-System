@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}My Reservations - Library System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col d-flex justify-content-between align-items-center">
+            <h1>My Reservations</h1>
+            <div class="d-flex gap-2">
+                <a href="{% url 'rooms:room_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-grid"></i> View All Rooms
+                </a>
+                <a href="{% url 'rooms:check_availability' %}" class="btn btn-primary">
+                    <i class="bi bi-calendar-check"></i> Check Availability
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% if reservations %}
+    <div class="row">
+        <div class="col">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Room</th>
+                            <th>Date</th>
+                            <th>Time Slot</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reservation in reservations %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'rooms:room_detail' reservation.room.pk %}" class="text-decoration-none">
+                                    {{ reservation.room.name }}
+                                </a>
+                            </td>
+                            <td>{{ reservation.date|date:"F j, Y" }}</td>
+                            <td>{{ reservation.get_time_slot_display }}</td>
+                            <td>
+                                {% if reservation.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Past</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if reservation.is_active %}
+                                <form method="post" action="{% url 'rooms:cancel_reservation' reservation.pk %}" 
+                                      class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this reservation?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="bi bi-x-circle"></i> Cancel
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <p class="mb-0">You don't have any reservations yet.</p>
+        <a href="{% url 'rooms:room_list' %}" class="alert-link">Browse study rooms</a> to make a reservation!
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

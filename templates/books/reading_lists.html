@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block title %}Reading Lists - Library System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col d-flex justify-content-between align-items-center">
+            <h1>Reading Lists</h1>
+            {% if user.is_authenticated %}
+            <a href="{% url 'books:reading_list_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Create New List
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if user.is_authenticated %}
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <a class="nav-link {% if not request.GET.tab or request.GET.tab == 'all' %}active{% endif %}" 
+               href="{% url 'books:reading_lists' %}?tab=all">All Lists</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.GET.tab == 'saved' %}active{% endif %}" 
+               href="{% url 'books:reading_lists' %}?tab=saved">
+               <i class="bi bi-bookmark"></i> Saved Lists
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.GET.tab == 'my' %}active{% endif %}" 
+               href="{% url 'books:reading_lists' %}?tab=my">My Lists</a>
+        </li>
+    </ul>
+    {% endif %}
+
+    <div class="row">
+        <div class="col">
+            {% if request.GET.tab == 'saved' and user.is_authenticated %}
+                {% if saved_lists %}
+                <div class="row row-cols-1 row-cols-md-3 g-4">
+                    {% for saved in saved_lists %}
+                    <div class="col">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ saved.reading_list.name }}</h5>
+                                <p class="card-text text-muted">
+                                    {{ saved.reading_list.description|truncatewords:20 }}
+                                </p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">by {{ saved.reading_list.user.username }}</small>
+                                    <span class="badge bg-primary">{{ saved.reading_list.readinglistitem_set.count }} books</span>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-transparent">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">Saved {{ saved.saved_at|date:"M j, Y" }}</small>
+                                    <a href="{% url 'books:reading_list_detail' saved.reading_list.pk %}" 
+                                       class="btn btn-outline-primary btn-sm">View List</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <p class="mb-0">You haven't saved any reading lists yet.</p>
+                    Browse the lists below to find some you like!
+                </div>
+                {% endif %}
+            {% elif request.GET.tab == 'my' and user.is_authenticated %}
+                {% if user_lists %}
+                <div class="row row-cols-1 row-cols-md-3 g-4">
+                    {% for list in user_lists %}
+                    <div class="col">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ list.name }}</h5>
+                                <p class="card-text text-muted">
+                                    {{ list.description|truncatewords:20 }}
+                                </p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge bg-primary">{{ list.book_count }} books</span>
+                                    {% if not list.is_public %}
+                                    <span class="badge bg-secondary">Private</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="card-footer bg-transparent">
+                                <a href="{% url 'books:reading_list_detail' list.pk %}" class="btn btn-outline-primary btn-sm">View List</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    You haven't created any reading lists yet.
+                    <a href="{% url 'books:reading_list_create' %}" class="alert-link">Create your first list!</a>
+                </div>
+                {% endif %}
+            {% else %}
+                {% if public_lists %}
+                <div class="row row-cols-1 row-cols-md-3 g-4">
+                    {% for list in public_lists %}
+                    <div class="col">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ list.name }}</h5>
+                                <p class="card-text text-muted">
+                                    {{ list.description|truncatewords:20 }}
+                                </p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge bg-primary">{{ list.book_count }} books</span>
+                                    <small class="text-muted">by {{ list.user.username }}</small>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-transparent">
+                                <a href="{% url 'books:reading_list_detail' list.pk %}" class="btn btn-outline-primary btn-sm">View List</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    No public reading lists available yet.
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

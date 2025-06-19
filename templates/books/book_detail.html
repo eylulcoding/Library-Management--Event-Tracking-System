@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ book.title }} - Library System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-4">
+            {% if book.cover_image %}
+                <img src="{{ book.cover_image.url }}" class="img-fluid rounded shadow" alt="{{ book.title }}">
+            {% else %}
+                <div class="bg-secondary rounded shadow d-flex align-items-center justify-content-center" style="height: 400px;">
+                    <i class="bi bi-book text-white" style="font-size: 5rem;"></i>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-8">
+            <h1 class="mb-3">{{ book.title }}</h1>
+            <h4 class="text-muted mb-4">by {{ book.author }}</h4>
+            
+            <div class="mb-4">
+                <span class="badge bg-primary me-2">{{ book.category.name }}</span>
+                <span class="badge {% if book.is_available %}bg-success{% else %}bg-danger{% endif %}">
+                    {{ book.is_available|yesno:"Available,Not Available" }}
+                </span>
+            </div>
+            
+            <p class="lead mb-4">{{ book.description }}</p>
+            
+            <div class="mb-4">
+                <ul class="list-unstyled">
+                    <li><strong>Available Copies:</strong> {{ book.available_copies }} / {{ book.total_copies }}</li>
+                </ul>
+            </div>
+            
+            {% if user.is_authenticated %}
+                {% if book.is_available %}
+                    <form method="post" action="{% url 'books:borrow_book' book.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-book"></i> Borrow Book
+                        </button>
+                    </form>
+                {% else %}
+                    <button class="btn btn-secondary" disabled>
+                        <i class="bi bi-book"></i> Not Available
+                    </button>
+                {% endif %}
+                
+                <div class="mt-2">
+                    <a href="{% url 'books:add_to_reading_list' book.pk %}" class="btn btn-outline-primary">
+                        <i class="bi bi-list-check"></i> Add to Reading List
+                    </a>
+                </div>
+                
+                <div class="card mb-4 mt-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Rate this Book</h5>
+                        <form action="{% url 'books:rate_book' book.pk %}" method="POST">
+                            {% csrf_token %}
+                            <div class="rating mb-3">
+                                {% for i in "54321"|make_list %}
+                                    <input type="radio" name="rating" value="{{ i }}" id="star{{ i }}"
+                                           {% if user_rating.rating == i|add:"0" %}checked{% endif %}>
+                                    <label for="star{{ i }}">★</label>
+                                {% endfor %}
+                            </div>
+                            <div class="mb-3">
+                                <textarea name="comment" class="form-control" rows="3" 
+                                          placeholder="Share your thoughts about this book...">{{ user_rating.comment }}</textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Submit Rating</button>
+                        </form>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    Please <a href="{% url 'account_login' %}">login</a> to borrow or rate this book.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3 class="mb-4">Recent Reviews</h3>
+            {% for rating in book.bookrating_set.all|slice:":5" %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <h6 class="card-subtitle mb-2 text-muted">{{ rating.user.username }}</h6>
+                            <div class="text-warning">
+                                {% for i in "12345"|make_list %}
+                                    {% if forloop.counter <= rating.rating %}
+                                        ★
+                                    {% else %}
+                                        ☆
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <p class="card-text">{{ rating.comment }}</p>
+                        <small class="text-muted">{{ rating.created_at|date:"F j, Y" }}</small>
+                    </div>
+                </div>
+            {% empty %}
+                <p class="text-muted">No reviews yet. Be the first to rate this book!</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3 class="mb-4">Borrowing History</h3>
+            {% for borrow in book.bookborrowing_set.all %}
+                <div class="borrow-history-item">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-person-circle me-2"></i>
+                        <div>
+                            <a href="{% url 'users:user_profile' username=borrow.user.username %}" class="text-decoration-none">
+                                {{ borrow.user.username }}
+                            </a>
+                            <small class="text-muted d-block">
+                                {{ borrow.borrowed_date|date:"M d, Y" }} - 
+                                {% if borrow.returned_date %}
+                                    {{ borrow.returned_date|date:"M d, Y" }}
+                                {% else %}
+                                    Present
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <p class="text-muted">No borrowing history yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Welcome to Library System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center mb-5">
+        <div class="col-md-8 text-center">
+            <h1 class="display-4 fw-bold mb-4">Welcome to Library System</h1>
+            <p class="lead mb-4">
+                Discover, borrow, and review books in our collection.
+            </p>
+            {% if not user.is_authenticated %}
+            <div class="d-grid gap-2 d-md-flex justify-content-center">
+                <a href="{% url 'account_signup' %}" class="btn btn-primary btn-lg px-4 me-md-2">Join Now</a>
+                <a href="{% url 'account_login' %}" class="btn btn-outline-primary btn-lg px-4">Login</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="bi bi-book display-4 text-primary mb-3"></i>
+                    <h3>Book Collection</h3>
+                    <p>Browse our extensive collection of books and borrow your favorites.</p>
+                    <a href="{% url 'books:book_list' %}" class="btn btn-primary">View Books</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="bi bi-door-open display-4 text-primary mb-3"></i>
+                    <h3>Study Rooms</h3>
+                    <p>Reserve study rooms for individual or group study sessions.</p>
+                    <a href="{% url 'rooms:room_list' %}" class="btn btn-primary">View Rooms</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="bi bi-list-check display-4 text-primary mb-3"></i>
+                    <h3>Reading Lists</h3>
+                    <p>Create and discover curated book lists from our community.</p>
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'books:reading_lists' %}" class="btn btn-primary">View Lists</a>
+                    {% else %}
+                    <a href="{% url 'account_login' %}" class="btn btn-primary">Login to View Lists</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

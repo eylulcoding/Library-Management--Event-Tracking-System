@@ -1,0 +1,8 @@
+                            {% if user.is_authenticated %}
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'rooms:check_availability' room.pk %}" 
+                                   class="btn btn-primary">
+                                    <i class="bi bi-calendar-check"></i> Check Availability
+                                </a>
+                            </div>
+                            {% endif %} 

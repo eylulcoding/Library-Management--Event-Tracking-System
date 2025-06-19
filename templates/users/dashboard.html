@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Library System{% endblock %}
+
+{% block extra_css %}
+<style>
+.stats-card {
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    background-color: var(--bs-body-bg);
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: transform 0.2s;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+}
+
+.stats-card i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.stats-card .number {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.activity-card {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    margin-bottom: 1rem;
+    transition: transform 0.2s;
+}
+
+.activity-card:hover {
+    transform: translateY(-5px);
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+}
+
+.activity-icon.book {
+    background-color: rgba(var(--bs-primary-rgb), 0.1);
+    color: var(--bs-primary);
+}
+
+.activity-icon.room {
+    background-color: rgba(var(--bs-success-rgb), 0.1);
+    color: var(--bs-success);
+}
+
+.activity-icon.rating {
+    background-color: rgba(var(--bs-warning-rgb), 0.1);
+    color: var(--bs-warning);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">Dashboard</h1>
+
+    <!-- Statistics -->
+    <div class="row mb-5">
+        <div class="col-md-4">
+            <div class="stats-card text-primary">
+                <i class="bi bi-book"></i>
+                <div class="number">{{ total_books_borrowed }}</div>
+                <div class="text-muted">Total Books Borrowed</div>
+                <small class="text-muted">{{ total_books_returned }} returned, {{ total_active_borrows }} active</small>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-card text-success">
+                <i class="bi bi-door-open"></i>
+                <div class="number">{{ total_room_reservations }}</div>
+                <div class="text-muted">Room Reservations</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-card text-warning">
+                <i class="bi bi-star"></i>
+                <div class="number">{{ total_ratings_given }}</div>
+                <div class="text-muted">Ratings Given</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Current Borrows -->
+        <div class="col-md-6">
+            <h2 class="h4 mb-4">Current Borrows</h2>
+            {% if current_borrows %}
+                {% for borrow in current_borrows %}
+                    <div class="card activity-card">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="activity-icon book">
+                                    <i class="bi bi-book"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h5 class="card-title mb-1">
+                                        <a href="{% url 'books:book_detail' pk=borrow.book.pk %}" class="text-decoration-none">
+                                            {{ borrow.book.title }}
+                                        </a>
+                                    </h5>
+                                    <p class="card-text text-muted mb-2">
+                                        Borrowed on {{ borrow.borrow_date|date:"M d, Y" }}
+                                        <br>
+                                        <i class="bi bi-calendar-event"></i> Due date: {{ borrow.due_date|date:"M d, Y" }}
+                                    </p>
+                                    <form action="{% url 'books:return_book' borrow.book.pk %}" method="POST" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-arrow-return-left"></i> Return Book
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">No current borrows</p>
+            {% endif %}
+
+            <!-- Past Borrows -->
+            <h2 class="h4 mb-4 mt-5">Recent Returns</h2>
+            {% if past_borrows %}
+                {% for borrow in past_borrows %}
+                    <div class="card activity-card">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="activity-icon book">
+                                    <i class="bi bi-book-fill"></i>
+                                </div>
+                                <div>
+                                    <h5 class="card-title mb-1">
+                                        <a href="{% url 'books:book_detail' pk=borrow.book.pk %}" class="text-decoration-none">
+                                            {{ borrow.book.title }}
+                                        </a>
+                                    </h5>
+                                    <p class="card-text text-muted mb-0">
+                                        Returned on {{ borrow.return_date|date:"M d, Y" }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">No past borrows</p>
+            {% endif %}
+        </div>
+
+        <!-- Room Reservations -->
+        <div class="col-md-6">
+            <h2 class="h4 mb-4">Upcoming Room Reservations</h2>
+            {% if active_reservations %}
+                {% for reservation in active_reservations %}
+                    <div class="card activity-card">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="activity-icon room">
+                                    <i class="bi bi-door-open"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h5 class="card-title mb-1">{{ reservation.room.name }}</h5>
+                                    <p class="card-text text-muted mb-2">
+                                        {{ reservation.date|date:"M d, Y" }} - {{ reservation.time_slot }}
+                                    </p>
+                                    <small class="text-muted d-block mb-2">
+                                        {{ reservation.number_of_people }} people
+                                    </small>
+                                    <form action="{% url 'rooms:cancel_reservation' reservation.pk %}" method="POST" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                            <i class="bi bi-x-circle"></i> Cancel Reservation
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">No upcoming reservations</p>
+            {% endif %}
+
+            <!-- Recent Ratings -->
+            <h2 class="h4 mb-4 mt-5">Recent Ratings</h2>
+            {% if recent_ratings %}
+                {% for rating in recent_ratings %}
+                    <div class="card activity-card">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="activity-icon rating">
+                                    <i class="bi bi-star"></i>
+                                </div>
+                                <div>
+                                    <h5 class="card-title mb-1">
+                                        <a href="{% url 'books:book_detail' pk=rating.book.pk %}" class="text-decoration-none">
+                                            {{ rating.book.title }}
+                                        </a>
+                                    </h5>
+                                    <div class="text-warning mb-1">
+                                        {% for i in "12345"|make_list %}
+                                            {% if forloop.counter <= rating.rating %}
+                                                ★
+                                            {% else %}
+                                                ☆
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    {% if rating.comment %}
+                                        <p class="card-text small mb-0">{{ rating.comment|truncatechars:100 }}</p>
+                                    {% endif %}
+                                    <small class="text-muted">
+                                        {{ rating.created_at|date:"M d, Y" }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">No ratings yet</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

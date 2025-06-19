@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}Sign Up - Library System{% endblock %}
+
+{% block extra_css %}
+<style>
+.auth-card {
+    max-width: 450px;
+    margin: 2rem auto;
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.auth-card .card-header {
+    background-color: transparent;
+    border-bottom: none;
+    text-align: center;
+    padding-top: 2rem;
+}
+
+.auth-card .card-body {
+    padding: 2rem;
+}
+
+.auth-icon {
+    font-size: 3rem;
+    color: var(--bs-primary);
+    margin-bottom: 1rem;
+}
+
+.form-floating {
+    margin-bottom: 1rem;
+}
+
+.form-floating input {
+    border-radius: 0.5rem;
+}
+
+.form-floating label {
+    color: #6c757d;
+}
+
+.auth-btn {
+    width: 100%;
+    padding: 0.8rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    margin-top: 1rem;
+}
+
+.auth-links {
+    text-align: center;
+    margin-top: 1.5rem;
+}
+
+.auth-links a {
+    color: var(--bs-primary);
+    text-decoration: none;
+}
+
+.auth-links a:hover {
+    text-decoration: underline;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card auth-card">
+        <div class="card-header">
+            <i class="bi bi-person-plus-fill auth-icon"></i>
+            <h2 class="card-title">Create Account</h2>
+            <p class="text-muted">Join our library community</p>
+        </div>
+        <div class="card-body">
+            <form class="signup" method="POST" action="{% url 'account_signup' %}">
+                {% csrf_token %}
+                
+                {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-circle"></i>
+                        Please correct the errors below:
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+                
+                <div class="form-floating">
+                    <input type="text" name="username" class="form-control {% if form.username.errors %}is-invalid{% endif %}" 
+                           id="id_username" placeholder="Username" required>
+                    <label for="id_username">Username</label>
+                    {% if form.username.errors %}
+                        <div class="invalid-feedback">{{ form.username.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-floating">
+                    <input type="email" name="email" class="form-control {% if form.email.errors %}is-invalid{% endif %}" 
+                           id="id_email" placeholder="Email" required>
+                    <label for="id_email">Email</label>
+                    {% if form.email.errors %}
+                        <div class="invalid-feedback">{{ form.email.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-floating">
+                    <input type="password" name="password1" class="form-control {% if form.password1.errors %}is-invalid{% endif %}" 
+                           id="id_password1" placeholder="Password" required>
+                    <label for="id_password1">Password</label>
+                    {% if form.password1.errors %}
+                        <div class="invalid-feedback">{{ form.password1.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-floating">
+                    <input type="password" name="password2" class="form-control {% if form.password2.errors %}is-invalid{% endif %}" 
+                           id="id_password2" placeholder="Confirm Password" required>
+                    <label for="id_password2">Confirm Password</label>
+                    {% if form.password2.errors %}
+                        <div class="invalid-feedback">{{ form.password2.errors }}</div>
+                    {% endif %}
+                </div>
+
+                {% if redirect_field_value %}
+                    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+                {% endif %}
+                
+                <button class="btn btn-primary auth-btn" type="submit">
+                    <i class="bi bi-person-plus"></i> Sign Up
+                </button>
+            </form>
+
+            <div class="auth-links">
+                <div>
+                    Already have an account? <a href="{% url 'account_login' %}">Sign in</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

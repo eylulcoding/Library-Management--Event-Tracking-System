@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}Add to Reading List - {{ book.title }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="h4 mb-0">Add to Reading List</h2>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title mb-4">{{ book.title }}</h5>
+                    
+                    {% if reading_lists %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="reading_list" class="form-label">Select a Reading List</label>
+                            <select class="form-select" id="reading_list" name="reading_list" required>
+                                <option value="">Choose a list...</option>
+                                {% for list in reading_lists %}
+                                <option value="{{ list.pk }}">{{ list.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Add to List</button>
+                            <a href="{% url 'books:book_detail' book.pk %}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-info">
+                        You don't have any reading lists yet.
+                        <a href="{% url 'books:reading_list_create' %}" class="alert-link">Create one now!</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

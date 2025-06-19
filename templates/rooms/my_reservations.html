@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}My Reservations - Library System{% endblock %}
+
+{% block extra_css %}
+<style>
+.reservation-card {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    margin-bottom: 1rem;
+    transition: transform 0.2s;
+}
+
+.reservation-card:hover {
+    transform: translateY(-5px);
+}
+
+.reservation-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: rgba(var(--bs-primary-rgb), 0.1);
+    color: var(--bs-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+}
+
+.reservation-icon i {
+    font-size: 1.5rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">My Room Reservations</h1>
+        <div class="d-flex gap-2">
+            <a href="{% url 'rooms:room_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-grid"></i> View All Rooms
+            </a>
+            <a href="{% url 'rooms:room_availability' %}" class="btn btn-primary">
+                <i class="bi bi-calendar-check"></i> Check Availability
+            </a>
+        </div>
+    </div>
+
+    {% if active_reservations %}
+        {% for reservation in active_reservations %}
+            <div class="card reservation-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-start">
+                        <div class="reservation-icon">
+                            <i class="bi bi-door-open"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h5 class="card-title mb-1">{{ reservation.room.name }}</h5>
+                                    <p class="text-muted mb-2">
+                                        <i class="bi bi-calendar me-1"></i> {{ reservation.date|date:"F j, Y" }}<br>
+                                        <i class="bi bi-clock me-1"></i> {{ reservation.time_slot }}<br>
+                                        <i class="bi bi-people me-1"></i> {{ reservation.number_of_people }} people
+                                    </p>
+                                </div>
+                                <button type="button" class="btn btn-outline-danger" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#cancelModal{{ reservation.id }}">
+                                    <i class="bi bi-x-lg"></i> Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cancel Confirmation Modal -->
+            <div class="modal fade" id="cancelModal{{ reservation.id }}" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Cancel Reservation</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Are you sure you want to cancel your reservation for:</p>
+                            <ul class="list-unstyled">
+                                <li><strong>Room:</strong> {{ reservation.room.name }}</li>
+                                <li><strong>Date:</strong> {{ reservation.date|date:"F j, Y" }}</li>
+                                <li><strong>Time:</strong> {{ reservation.time_slot }}</li>
+                            </ul>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <form action="{% url 'rooms:cancel_reservation' reservation.pk %}" method="POST" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="bi bi-x-circle"></i> Confirm Cancellation
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="bi bi-calendar-x text-muted" style="font-size: 4rem;"></i>
+            </div>
+            <h3>No Active Reservations</h3>
+            <p class="text-muted mb-4">You don't have any upcoming room reservations.</p>
+            <a href="{% url 'rooms:room_list' %}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Make a Reservation
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

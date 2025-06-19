@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ reading_list.name }} - Library System{% endblock %}
+
+{% block content %}
+<div class="container">
+    {% csrf_token %}
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'books:reading_lists' %}">Reading Lists</a></li>
+                    <li class="breadcrumb-item active">{{ reading_list.name }}</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h1 class="mb-2">{{ reading_list.name }}</h1>
+                    <p class="text-muted mb-1">Created by {{ reading_list.user.username }}</p>
+                    <p class="text-muted mb-3">
+                        <small>Created {{ reading_list.created_at|date:"F j, Y" }}</small>
+                        {% if not reading_list.is_public %}
+                        <span class="badge bg-secondary ms-2">Private</span>
+                        {% endif %}
+                    </p>
+                    {% if reading_list.description %}
+                    <p class="lead">{{ reading_list.description }}</p>
+                    {% endif %}
+                </div>
+                {% if user.is_authenticated and user != reading_list.user %}
+                <div class="d-flex gap-2">
+                    <button class="btn {% if reading_list.is_liked_by_user %}btn-danger{% else %}btn-outline-danger{% endif %} like-btn"
+                            data-list-id="{{ reading_list.pk }}">
+                        <i class="bi bi-heart{% if reading_list.is_liked_by_user %}-fill{% endif %}"></i>
+                        <span class="like-count">{{ reading_list.like_count }}</span>
+                    </button>
+                    <button class="btn {% if reading_list.is_saved_by_user %}btn-primary{% else %}btn-outline-primary{% endif %} save-btn"
+                            data-list-id="{{ reading_list.pk }}">
+                        <i class="bi bi-bookmark{% if reading_list.is_saved_by_user %}-fill{% endif %}"></i>
+                        <span class="save-count">{{ reading_list.save_count }}</span>
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            {% if reading_list.readinglistitem_set.exists %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Book</th>
+                            <th>Author</th>
+                            <th>Added</th>
+                            {% if user == reading_list.user %}
+                            <th>Actions</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in reading_list.readinglistitem_set.all %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'books:book_detail' item.book.pk %}" class="text-decoration-none">
+                                    {{ item.book.title }}
+                                </a>
+                            </td>
+                            <td>{{ item.book.author }}</td>
+                            <td>{{ item.added_at|date:"M j, Y" }}</td>
+                            {% if user == reading_list.user %}
+                            <td>
+                                <form method="post" action="{% url 'books:remove_from_list' reading_list.pk item.book.pk %}" 
+                                      class="d-inline" onsubmit="return confirm('Remove this book from the list?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                This reading list is empty.
+                {% if user == reading_list.user %}
+                <a href="{% url 'books:book_list' %}" class="alert-link">Browse books to add some!</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+const handleInteraction = (() => {
+    let isProcessing = false;
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    function updateButton(button, isActive, activeClass, inactiveClass, iconBase, count) {
+        // Update button class
+        button.classList.remove(isActive ? inactiveClass : activeClass);
+        button.classList.add(isActive ? activeClass : inactiveClass);
+        
+        // Update icon
+        const icon = button.querySelector('i');
+        icon.classList.remove(isActive ? `${iconBase}` : `${iconBase}-fill`);
+        icon.classList.add(isActive ? `${iconBase}-fill` : `${iconBase}`);
+        
+        // Update count
+        button.querySelector('span').textContent = count;
+    }
+
+    async function handleButtonClick(button, url, activeClass, inactiveClass, iconBase) {
+        if (isProcessing) return;
+        isProcessing = true;
+        button.disabled = true;
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const isActive = iconBase === 'bi-heart' ? data.is_liked : data.is_saved;
+            const count = iconBase === 'bi-heart' ? data.like_count : data.save_count;
+            
+            updateButton(button, isActive, activeClass, inactiveClass, iconBase, count);
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        } finally {
+            isProcessing = false;
+            button.disabled = false;
+        }
+    }
+
+    return { handleButtonClick };
+})();
+
+// Initialize buttons once when the document loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Like button functionality
+    const likeButton = document.querySelector('.like-btn');
+    if (likeButton) {
+        likeButton.addEventListener('click', function() {
+            const listId = this.dataset.listId;
+            handleInteraction.handleButtonClick(
+                this,
+                `/reading-lists/${listId}/like/`,
+                'btn-danger',
+                'btn-outline-danger',
+                'bi-heart'
+            );
+        });
+    }
+
+    // Save button functionality
+    const saveButton = document.querySelector('.save-btn');
+    if (saveButton) {
+        saveButton.addEventListener('click', function() {
+            const listId = this.dataset.listId;
+            handleInteraction.handleButtonClick(
+                this,
+                `/reading-lists/${listId}/save/`,
+                'btn-primary',
+                'btn-outline-primary',
+                'bi-bookmark'
+            );
+        });
+    }
+});
+</script>
+{% endblock %}
+{% endblock %} 
