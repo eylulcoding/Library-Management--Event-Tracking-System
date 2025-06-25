@@ -36,6 +36,6 @@ Overdue Return Notifications
 Technologies Used:
 
 Backend: Python 3.x & Django
-Database: SQLite
-Frontend: Django Templates, HTML, CSS
-Other: Django Admin Panel, Django Auth
+*Database: SQLite
+*Frontend: Django Templates, HTML, CSS
+*Other: Django Admin Panel, Django Auth
