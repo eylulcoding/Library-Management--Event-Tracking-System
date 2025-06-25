@@ -1,7 +1,11 @@
 Project Description – Library Reservation and Tracking System
+
+
 This project is a web-based system that allows users to search for, reserve, borrow, and return library books. By logging into their personal accounts, users can view their active and past reservations and update their profile information. On the admin side, authorized staff can manage books, users, and reservations; perform CRUD operations on book records; and send alerts to users with overdue returns.
 
+
 The system is built using the Django framework, providing a secure and functional environment for both users and administrators. With Django’s built-in authentication and admin panel, the management of the platform becomes highly efficient.
+
 
 Key Features:
 
