@@ -10,16 +10,39 @@ The system is built using the Django framework, providing a secure and functiona
 Key Features:
 
 User Registration and Login
+
+
 Book Search and Filtering (by category, author, title, date)
+
+
 Book Reservation and Tracking
+
+
 Book Return System
+
+
 User Profile Update
+
+
 Admin Management of Books, Users, and Reservations
+
+
 Book Stock Tracking
+
+
 Overdue Return Notifications
+
+
 Technologies Used:
 
+
 Backend: Python 3.x & Django
+
+
 Database: SQLite
+
+
 Frontend: Django Templates, HTML, CSS
+
+
 Other: Django Admin Panel, Django Auth
